@@ -1,10 +1,3 @@
-import os
-
-APPLICATIONS_ADDON_ROOT = os.path.dirname(os.path.abspath(__file__))
-
-PLATFORM_NAMES = {"windows", "linux", "darwin"}
-DEFAULT_ENV_SUBGROUP = "standard"
-
 LABELS_BY_GROUP_NAME = {
     "adsk_3dsmax": "3ds Max",
     "aftereffects": "After Effects",
@@ -25,8 +18,8 @@ LABELS_BY_GROUP_NAME = {
     "openrv": "OpenRV",
     "photoshop": "Photoshop",
     "resolve": "Resolve",
-    "terminal": "Terminal",
     "substancepainter": "Substance Painter",
+    "terminal": "Terminal",
     "tvpaint": "TVPaint",
     "unreal": "Unreal Editor",
     "wrap": "Wrap",
@@ -53,7 +46,6 @@ ICONS_BY_GROUP_NAME = {
     "photoshop": "photoshop.png",
     "resolve": "resolve.png",
     "substancepainter": "substancepainter.png",
-    "terminal": "terminal.png",
     "tvpaint": "tvpaint.png",
     "unreal": "ue4.png",
     "wrap": "wrap.png",

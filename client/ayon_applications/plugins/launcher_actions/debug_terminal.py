@@ -1,35 +1,44 @@
 import os
-import subprocess
 from typing import Optional
 
 from qtpy import QtWidgets, QtGui, QtCore
 
 from ayon_applications import (
     Application,
-    ApplicationManager,
+    ApplicationManager
 )
-from ayon_applications.utils import get_app_environments_for_context
+
+from ayon_applications.utils import (
+    get_app_environments_for_context,
+    get_applications_for_context,
+    get_app_icon_path
+)
+from ayon_core.pipeline.actions import LauncherActionSelection
 from ayon_core.pipeline import LauncherAction
 from ayon_core.style import load_stylesheet
+from ayon_core.tools.utils.lib import get_qt_icon
 
 
-def get_application_qt_icon(
-        application: Application
-) -> Optional[QtGui.QIcon]:
+def get_application_qt_icon(application: Application) -> Optional[QtGui.QIcon]:
     """Return QtGui.QIcon for an Application"""
-    # TODO: Improve workflow to get the icon, remove 'color' hack
-    from ayon_core.tools.launcher.models.actions import get_action_icon
-    from ayon_core.tools.utils.lib import get_qt_icon
-    application.color = "white"
-    return get_qt_icon(get_action_icon(application))
+    icon = application.icon
+    if not icon:
+        return QtGui.QIcon()
+    icon_filepath = get_app_icon_path(icon)
+    if os.path.exists(icon_filepath):
+        return get_qt_icon({"type": "path", "path": icon_filepath})
+    return QtGui.QIcon()
 
 
-class DebugShell(LauncherAction):
-    """Run any host environment in command line."""
-    name = "debugshell"
-    label = "Shell"
-    icon = "terminal"
-    color = "#e8770e"
+class DebugTerminal(LauncherAction):
+    """Run any host environment in command line terminal."""
+    name = "debugterminal"
+    label = "Terminal"
+    icon = {
+        "type": "awesome-font",
+        "name": "fa.terminal",
+        "color": "#e8770e"
+    }
     order = 10
 
     def is_compatible(self, selection) -> bool:
@@ -41,27 +50,29 @@ class DebugShell(LauncherAction):
         pos = QtGui.QCursor.pos()
         application_manager = ApplicationManager()
 
-        # Choose shell
-        shell_applications = self.get_shell_applications(application_manager)
-        if len(shell_applications) == 0:
-            raise RuntimeError(
-                "Missing application variants for shell application. Please "
-                "configure 'ayon+settings://applications/applications/shell'"
+        # Choose terminal
+        terminal_applications = self.get_terminal_applications(
+            application_manager)
+        if len(terminal_applications) == 0:
+            raise ValueError(
+                "Missing application variants for terminal application. "
+                "Please configure "
+                "'ayon+settings://applications/applications/terminal'"
             )
-        elif len(shell_applications) == 1:
+        elif len(terminal_applications) == 1:
             # If only one configured shell application, always use that one
-            shell_app = shell_applications[0]
-            print("Only one shell application variant is configured. "
-                  f"Defaulting to {shell_app.full_label}")
+            terminal_app = terminal_applications[0]
+            print("Only one terminal application variant is configured. "
+                  f"Defaulting to {terminal_app.full_label}")
         else:
-            shell_app = self.choose_app(shell_applications, pos,
-                                        show_variant_name_only=True)
-        if not shell_app:
+            terminal_app = self.choose_app(
+                terminal_applications, pos, show_variant_name_only=True)
+        if not terminal_app:
             return
 
         # Get applications
         applications = self.get_project_applications(
-            application_manager, selection.project_entity)
+            application_manager, selection)
         app = self.choose_app(applications, pos)
         if not app:
             return
@@ -85,10 +96,10 @@ class DebugShell(LauncherAction):
         if cwd:
             print(f"Setting Work Directory: {cwd}")
 
-        print(f"Launching shell in environment of {app.full_label}..")
-        self.launch_app_as_shell(
+        print(f"Launching terminal in environment of {app.full_label}..")
+        self.launch_terminal_with_app_context(
             application_manager,
-            shell_app,
+            terminal_app,
             project_name=selection.project_name,
             folder_path=selection.folder_path,
             task_name=selection.task_name,
@@ -123,13 +134,23 @@ class DebugShell(LauncherAction):
             return result.data()
 
     @staticmethod
-    def get_project_applications(application_manager: ApplicationManager,
-                                 project_entity: dict) -> list[Application]:
+    def get_project_applications(
+            application_manager: ApplicationManager,
+            selection: LauncherActionSelection) -> list[Application]:
         """Return the enabled applications for the project"""
+
+        application_names = get_applications_for_context(
+            project_name=selection.project_name,
+            folder_entity=selection.folder_entity,
+            task_entity=selection.task_entity,
+            project_settings=selection.get_project_settings(),
+            project_entity=selection.project_entity
+        )
+
         # Filter to apps valid for this current project, with logic from:
         # `ayon_core.tools.launcher.models.actions.ApplicationAction.is_compatible`  # noqa
         applications = []
-        for app_name in project_entity["attrib"].get("applications", []):
+        for app_name in application_names:
             app = application_manager.applications.get(app_name)
             if not app or not app.enabled:
                 continue
@@ -138,13 +159,14 @@ class DebugShell(LauncherAction):
         return applications
 
     @staticmethod
-    def get_shell_applications(application_manager) -> list[Application]:
-        """Return all configured shell applications"""
-        # TODO: Maybe filter out shell applications not configured for your
+    def get_terminal_applications(application_manager) -> list[Application]:
+        """Return all configured terminal applications"""
+        # TODO: Maybe filter out terminal applications not configured for your
         #  current platform
-        return list(application_manager.app_groups["shell"].variants.values())
+        return list(
+            application_manager.app_groups["terminal"].variants.values())
 
-    def launch_app_as_shell(
+    def launch_terminal_with_app_context(
         self,
         application_manager: ApplicationManager,
         application: Application,
@@ -164,5 +186,4 @@ class DebugShell(LauncherAction):
             env=env
         )
         launch_context.kwargs["cwd"] = cwd
-        launch_context.kwargs["creationflags"] = subprocess.CREATE_NEW_CONSOLE
         return application_manager.launch_with_context(launch_context)

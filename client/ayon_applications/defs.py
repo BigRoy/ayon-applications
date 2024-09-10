@@ -4,6 +4,7 @@ import json
 import copy
 
 from ayon_core.lib import find_executable
+from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 
 class LaunchTypes:
@@ -152,15 +153,22 @@ class ApplicationGroup:
         data (dict): Group defying data loaded from settings.
         manager (ApplicationManager): Manager that created the group.
     """
-
     def __init__(self, name, data, manager):
+        icon = ICONS_BY_GROUP_NAME.get(name)
+        if not icon:
+            icon = data.get("icon")
+
+        label = LABELS_BY_GROUP_NAME.get(name)
+        if not label:
+            label = data.get("label")
+
         self.name = name
         self.manager = manager
         self._data = data
 
         self.enabled = data["enabled"]
-        self.label = data["label"] or None
-        self.icon = data["icon"] or None
+        self.label = label
+        self.icon = icon
         env = {}
         try:
             env = json.loads(data["environment"])
