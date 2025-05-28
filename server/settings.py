@@ -188,7 +188,7 @@ class AppVariant(BaseSettingsModel):
         default_factory=MultiplatformStrList, title="Arguments"
     )
     environment: str = SettingsField(
-        "{}", title="Environment", widget="textarea"
+        "{}", title="Environment", widget="textarea", syntax="json"
     )
 
     @validator("environment")
@@ -200,7 +200,7 @@ class AppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
     host_name: str = SettingsField("", title="Host name")
     environment: str = SettingsField(
-        "{}", title="Environment", widget="textarea"
+        "{}", title="Environment", widget="textarea", syntax="json"
     )
 
     variants: list[AppVariant] = SettingsField(
@@ -223,7 +223,7 @@ class AdditionalAppGroup(BaseSettingsModel):
     host_name: str = SettingsField("", title="Host name")
     icon: str = SettingsField("", title="Icon")
     environment: str = SettingsField(
-        "{}", title="Environment", widget="textarea"
+        "{}", title="Environment", widget="textarea", syntax="json"
     )
 
     variants: list[AppVariant] = SettingsField(
@@ -250,7 +250,7 @@ class ToolVariantModel(BaseSettingsModel):
         enum_resolver=applications_enum,
     )
     environment: str = SettingsField(
-        "{}", title="Environments", widget="textarea"
+        "{}", title="Environments", widget="textarea", syntax="json"
     )
 
     @validator("environment")
@@ -262,7 +262,7 @@ class ToolGroupModel(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
     label: str = SettingsField("", title="Label")
     environment: str = SettingsField(
-        "{}", title="Environments", widget="textarea"
+        "{}", title="Environments", widget="textarea", syntax="json"
     )
     variants: list[ToolVariantModel] = SettingsField(default_factory=list)
 
